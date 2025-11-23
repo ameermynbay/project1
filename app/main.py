@@ -2,8 +2,13 @@ from fastapi import FastAPI
 from sqlalchemy import text
 
 from app.db.session import engine
+from app.routers.auth import router as auth_router
 
 app = FastAPI()
+
+# Include routers
+app.include_router(auth_router)
+
 
 @app.on_event("startup")
 def test_db_connection():
