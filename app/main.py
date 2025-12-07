@@ -3,11 +3,13 @@ from sqlalchemy import text
 
 from app.db.session import engine
 from app.routers.auth import router as auth_router
+from app.routers.books import router as books_router
 
 app = FastAPI()
 
 # Include routers
 app.include_router(auth_router)
+app.include_router(books_router)
 
 
 @app.on_event("startup")
