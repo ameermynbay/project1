@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
@@ -67,3 +67,43 @@ class BookOut(BookBase):
 
     class Config:
         from_attributes = True  # Pydantic v2; orm_mode=True in v1
+
+
+# ----- Reading Log Schemas -----
+
+
+class ReadingLogBase(BaseModel):
+    book_id: int
+    pages_read: int
+    date: date
+    note: Optional[str] = None
+
+
+class ReadingLogCreate(ReadingLogBase):
+    """
+    For creating a new reading log.
+    """
+    pass
+
+
+class ReadingLogUpdate(BaseModel):
+    """
+    For updating an existing reading log.
+    All fields optional (partial update).
+    """
+    book_id: Optional[int] = None
+    pages_read: Optional[int] = None
+    date: Optional[date] = None
+    note: Optional[str] = None
+
+
+class ReadingLogOut(BaseModel):
+    id: int
+    book_id: int
+    pages_read: int
+    date: date
+    note: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True  # Pydantic v2 (orm_mode=True in v1)
