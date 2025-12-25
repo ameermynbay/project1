@@ -1,6 +1,6 @@
-from datetime import datetime, date
-from pydantic import BaseModel, EmailStr
-from typing import Optional
+from datetime import datetime, date as DateType
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional, List
 
 # ----- User Schemas -----
 
@@ -10,7 +10,12 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(
+        ...,
+        min_length=8,
+        max_length=128,
+        description="Password must be at least 8 characters.",
+    )
 
 
 class UserOut(UserBase):
@@ -39,9 +44,23 @@ class Token(BaseModel):
 
 
 class BookBase(BaseModel):
-    title: str
-    author: Optional[str] = None
-    total_pages: Optional[int] = None
+    title: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Book title (1–255 characters).",
+    )
+    author: Optional[str] = Field(
+        None,
+        max_length=255,
+        description="Author name (optional).",
+    )
+    total_pages: Optional[int] = Field(
+        None,
+        gt=0,
+        le=10000,
+        description="Total number of pages (if known, must be > 0).",
+    )
 
 
 class BookCreate(BookBase):
@@ -73,11 +92,22 @@ class BookOut(BookBase):
 
 
 class ReadingLogBase(BaseModel):
-    book_id: int
-    pages_read: int
-    date: date
-    note: Optional[str] = None
-
+    book_id: int = Field(..., description="ID of the book you are reading.")
+    pages_read: int = Field(
+        ...,
+        gt=0,
+        le=10000,
+        description="Number of pages read in this session (must be > 0).",
+    )
+    date: DateType = Field(
+        ...,
+        description="Date of reading (YYYY-MM-DD).",
+    )
+    note: Optional[str] = Field(
+        None,
+        max_length=1000,
+        description="Optional note about this reading session.",
+    )
 
 class ReadingLogCreate(ReadingLogBase):
     """
@@ -87,21 +117,31 @@ class ReadingLogCreate(ReadingLogBase):
 
 
 class ReadingLogUpdate(BaseModel):
-    """
-    For updating an existing reading log.
-    All fields optional (partial update).
-    """
-    book_id: Optional[int] = None
-    pages_read: Optional[int] = None
-    date: Optional[date] = None
-    note: Optional[str] = None
-
+    book_id: Optional[int] = Field(
+        None,
+        description="Change the book ID (must be a book you own).",
+    )
+    pages_read: Optional[int] = Field(
+        None,
+        gt=0,
+        le=10000,
+        description="Update pages read (must be > 0).",
+    )
+    date: Optional[DateType] = Field(
+        None,
+        description="Update date of reading.",
+    )
+    note: Optional[str] = Field(
+        None,
+        max_length=1000,
+        description="Update note.",
+    )
 
 class ReadingLogOut(BaseModel):
     id: int
     book_id: int
     pages_read: int
-    date: date
+    date: DateType
     note: Optional[str]
     created_at: datetime
 
