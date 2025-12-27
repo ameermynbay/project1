@@ -13,7 +13,7 @@ class UserCreate(UserBase):
     password: str = Field(
         ...,
         min_length=8,
-        max_length=128,
+        max_length=72,
         description="Password must be at least 8 characters.",
     )
 

@@ -20,12 +20,12 @@ router = APIRouter(
 # ----- Register -----
 
 
+
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def register_user(
     user_in: UserCreate,
     db: Session = Depends(get_db),
 ):
-    # Check if user already exists
     existing = db.query(models.User).filter(models.User.email == user_in.email).first()
     if existing:
         raise HTTPException(
@@ -39,11 +39,9 @@ def register_user(
         email=user_in.email,
         password_hash=hashed_password,
     )
-
     db.add(user)
     db.commit()
     db.refresh(user)
-
     return user
 
 

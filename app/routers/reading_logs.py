@@ -16,6 +16,33 @@ router = APIRouter(
     tags=["reading-logs"],
 )
 
+@router.get(
+    "/summary",
+)
+def get_reading_summary(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+    book_id: Optional[int] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+):
+    """
+    Return simple stats: total pages read (optionally filtered).
+    """
+    query = db.query(func.sum(models.ReadingLog.pages_read)).filter(
+        models.ReadingLog.user_id == current_user.id
+    )
+
+    if book_id is not None:
+        query = query.filter(models.ReadingLog.book_id == book_id)
+    if date_from is not None:
+        query = query.filter(models.ReadingLog.date >= date_from)
+    if date_to is not None:
+        query = query.filter(models.ReadingLog.date <= date_to)
+
+    total_pages = query.scalar() or 0
+
+    return {"total_pages_read": int(total_pages)}
 
 def _get_user_log_or_404(
     log_id: int,
@@ -182,32 +209,6 @@ def delete_reading_log(
     return
 
 
-@router.get(
-    "/summary",
-)
-def get_reading_summary(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-    book_id: Optional[int] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-):
-    """
-    Return simple stats: total pages read (optionally filtered).
-    """
-    query = db.query(func.sum(models.ReadingLog.pages_read)).filter(
-        models.ReadingLog.user_id == current_user.id
-    )
 
-    if book_id is not None:
-        query = query.filter(models.ReadingLog.book_id == book_id)
-    if date_from is not None:
-        query = query.filter(models.ReadingLog.date >= date_from)
-    if date_to is not None:
-        query = query.filter(models.ReadingLog.date <= date_to)
-
-    total_pages = query.scalar() or 0
-
-    return {"total_pages_read": int(total_pages)}
 
 

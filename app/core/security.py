@@ -11,21 +11,46 @@ from app.core.config import settings
 from app.db.session import get_db
 from app import models
 
-# Password hashing context (bcrypt)
+# ----- Password hashing context (bcrypt) -----
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# How we will read the token from requests (Authorization: Bearer <token>)
+# Bearer token extraction from Authorization header
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
+MAX_BCRYPT_BYTES = 72
 
-# ----- Password hashing helpers -----
+
+def _truncate_for_bcrypt(password: str) -> str:
+    """
+    Ensure the password is at most 72 bytes when encoded as UTF-8.
+    If it's longer, we truncate the bytes and decode back.
+    This avoids bcrypt's ValueError and keeps behavior consistent
+    between hashing and verification.
+    """
+    if not isinstance(password, str):
+        raise ValueError("Password must be a string")
+
+    password_bytes = password.encode("utf-8")
+
+    if len(password_bytes) > MAX_BCRYPT_BYTES:
+        password_bytes = password_bytes[:MAX_BCRYPT_BYTES]
+        # 'ignore' is fine here; we mainly care about consistency
+        password = password_bytes.decode("utf-8", errors="ignore")
+
+    return password
+
+
+# ----- Password helpers -----
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    plain_password = _truncate_for_bcrypt(plain_password)
     return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
+    password = _truncate_for_bcrypt(password)
     return pwd_context.hash(password)
 
 
@@ -36,10 +61,6 @@ def create_access_token(
     data: dict,
     expires_delta: Optional[timedelta] = None,
 ) -> str:
-    """
-    data: payload to encode (e.g., {"sub": user_id})
-    expires_delta: how long until the token expires
-    """
     to_encode = data.copy()
 
     if expires_delta:
@@ -59,10 +80,6 @@ def create_access_token(
 
 
 def decode_access_token(token: str) -> dict:
-    """
-    Decode JWT token and return payload.
-    Raises JWTError if invalid.
-    """
     payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     return payload
 
@@ -74,9 +91,6 @@ def get_current_user(
     db: Session = Depends(get_db),
     token: str = Depends(oauth2_scheme),
 ) -> models.User:
-    """
-    Extract user from Bearer token (Authorization header).
-    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
