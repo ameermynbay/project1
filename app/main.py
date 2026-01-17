@@ -1,3 +1,6 @@
+from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
+
 from fastapi import FastAPI, Request
 from sqlalchemy import text
 
@@ -9,6 +12,17 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException as FastAPIHTTPException
 
 app = FastAPI()
+
+# CORS (only enabled if origins are provided)
+if settings.CORS_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
 
 # Include routers
 app.include_router(auth_router)
@@ -33,7 +47,17 @@ def test_db_connection():
 
 @app.get("/health")
 def read_health():
-    return {"status": "ok"}
+    db_ok = True
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception:
+        db_ok = False
+
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "database": "ok" if db_ok else "down",
+    }
 
 
 @app.exception_handler(FastAPIHTTPException)

@@ -1,12 +1,21 @@
 # Virtual environment
 .venv/
+venv/
 
 # Python cache
 __pycache__/
 *.py[cod]
+*.pyc
+*.pyo
+.pytest_cache/
 
-# VSCode
+# sqlite test db
+test_reading_tracker.db
+
+# OS/editor
+.DS_Store
 .vscode/
+.idea/
 
 # Env files
 .env
