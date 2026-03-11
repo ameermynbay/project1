@@ -46,3 +46,11 @@ def test_register_duplicate_email(client: TestClient):
     res2 = client.post("/auth/register", json=payload)
     assert res2.status_code == 400
     assert "already exists" in res2.json()["error" if "error" in res2.json() else "detail"]
+
+
+def register_and_login(client, email, password):
+    client.post("/auth/register", json={"email": email, "password": password})
+    res = client.post("/auth/login", json={"email": email, "password": password})
+    assert res.status_code == 200
+    data = res.json()
+    return data["access_token"], data["refresh_token"]

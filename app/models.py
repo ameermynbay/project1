@@ -10,6 +10,7 @@ from sqlalchemy import (
     Text,
 )
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 from app.db.session import Base
 
@@ -67,3 +68,17 @@ class ReadingLog(Base):
     def __repr__(self) -> str:
         return f"<ReadingLog id={self.id} user_id={self.user_id} book_id={self.book_id}>"
 
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    # Store only hash (never store raw token)
+    token_hash = Column(String(128), unique=True, index=True, nullable=False)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+
+    user = relationship("User", backref="refresh_tokens")

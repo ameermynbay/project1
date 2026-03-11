@@ -10,6 +10,8 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.db.session import get_db
 from app import models
+import hashlib
+import secrets
 
 # ----- Password hashing context (bcrypt) -----
 
@@ -111,3 +113,21 @@ def get_current_user(
         raise credentials_exception
 
     return user
+
+def hash_refresh_token(token: str) -> str:
+    """
+    Hash refresh token with a server-side pepper (SECRET_KEY).
+    """
+    data = (token + settings.SECRET_KEY).encode("utf-8")
+    return hashlib.sha256(data).hexdigest()
+
+
+def create_refresh_token() -> str:
+    """
+    Create a cryptographically secure random token.
+    """
+    return secrets.token_urlsafe(48)
+
+
+def refresh_token_expiry() -> datetime:
+    return datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
